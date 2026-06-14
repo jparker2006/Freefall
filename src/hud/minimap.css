@@ -1,0 +1,150 @@
+/* Minimap — retro green goggle frame around a MapLibre street map. Collapsed = a
+   passive corner widget (pointer-events off, clicks pass to the canvas); expanded
+   = a large tap-friendly overview. The map's GL canvas gets a dark filter so the
+   light "positron" basemap reads like the dark HUD; HTML markers/controls (drawn
+   over the canvas) are NOT filtered, so the green drone arrow + pins stay crisp. */
+.ff-minimap {
+  --osd: #2bff8c;
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  width: 220px;
+  height: 220px;
+  z-index: 20;
+  border: 1px solid rgba(43, 255, 140, 0.55);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #05080b;
+  box-shadow: 0 0 14px rgba(0, 0, 0, 0.5), 0 0 8px rgba(43, 255, 140, 0.18) inset;
+  pointer-events: none; /* collapsed = passive; flight clicks reach the canvas */
+  transition: width 0.22s ease, height 0.22s ease, right 0.22s ease, bottom 0.22s ease;
+}
+.ff-minimap.expanded {
+  right: 5vw;
+  bottom: 5vh;
+  width: 90vw;
+  height: 84vh;
+  pointer-events: auto; /* expanded = pan / tap pins */
+  border-radius: 12px;
+}
+/* hidden during pause / free-look — stays mounted so the map isn't recreated */
+.ff-minimap--hidden {
+  display: none;
+}
+
+.ff-minimap .ff-mm-map {
+  position: absolute;
+  inset: 0;
+}
+/* dark-mode the basemap imagery only (not markers/controls) */
+.ff-minimap canvas.maplibregl-canvas {
+  filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.95) saturate(0.85);
+}
+
+/* inner vignette + scanline tint to match the OSD goggle look */
+.ff-minimap .ff-mm-frame {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 60%, rgba(0, 0, 0, 0.4) 100%);
+  box-shadow: 0 0 0 1px rgba(43, 255, 140, 0.18) inset;
+}
+
+/* north indicator on the frame */
+.ff-minimap .ff-mm-n {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--osd);
+  text-shadow: 0 0 6px rgba(43, 255, 140, 0.6);
+  pointer-events: none;
+}
+.ff-minimap .ff-mm-hint {
+  position: absolute;
+  bottom: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--osd);
+  opacity: 0.6;
+  text-transform: uppercase;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* drone marker — green arrow, glows; never intercepts pointer */
+.ff-mm-drone {
+  pointer-events: none;
+  filter: drop-shadow(0 0 4px rgba(43, 255, 140, 0.8));
+  will-change: transform;
+}
+
+/* location pins */
+.ff-mm-pin {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+.ff-mm-pin-dot {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(6, 20, 13, 0.9);
+  border: 1.5px solid var(--osd);
+  color: var(--osd);
+  font-size: 10px;
+  font-weight: 700;
+  box-shadow: 0 0 6px rgba(43, 255, 140, 0.5);
+}
+.ff-mm-pin:hover .ff-mm-pin-dot {
+  background: var(--osd);
+  color: #06140d;
+}
+.ff-mm-pin-label {
+  display: none;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(6, 20, 13, 0.82);
+  border: 1px solid rgba(43, 255, 140, 0.4);
+  color: var(--osd);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  text-shadow: 0 0 5px rgba(43, 255, 140, 0.5);
+}
+/* show pin names only in the expanded overview */
+.ff-minimap.expanded .ff-mm-pin-label {
+  display: inline-block;
+}
+
+/* custom waypoint marker — yellow diamond, glows */
+.ff-mm-wp {
+  pointer-events: none;
+  filter: drop-shadow(0 0 5px rgba(255, 221, 0, 0.85));
+}
+
+/* tame MapLibre's default attribution to the dark theme */
+.ff-minimap .maplibregl-ctrl-attrib {
+  background: rgba(6, 20, 13, 0.7);
+  font-size: 9px;
+}
+.ff-minimap .maplibregl-ctrl-attrib a {
+  color: #9fefc6;
+}
