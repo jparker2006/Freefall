@@ -11,6 +11,8 @@ import { useDroneStore } from "../drone/droneState";
 import { useWorldStore } from "../world/useWorldStore";
 import type { WorldMode } from "../world/useWorldStore";
 import { levaBridge } from "./levaBridge";
+import { useGamepadStore } from "../input/gamepadStore";
+import type { ControllerThrottleMode } from "../input/gamepadStore";
 import { IS_TOUCH } from "../ui/device";
 
 // The panel shows ms for time-constants and a couple of renamed keys; this is the
@@ -36,6 +38,7 @@ type LevaValues = {
   chroma: number;
   motionBlur: number;
   metric: boolean;
+  controllerThrottle: string;
   showDroneBody: boolean;
   worldMode: string;
   errorTarget: number;
@@ -133,6 +136,11 @@ export function TuningPanel() {
         mouseSensitivity: { value: DEFAULTS.mouseSensitivity, min: 0.001, max: 0.04, step: 0.0005 },
         invertPitch: { value: DEFAULTS.invertPitch },
         precisionScale: { value: DEFAULTS.precisionScale, min: 0.1, max: 1, step: 0.05 },
+        controllerThrottle: {
+          value: useGamepadStore.getState().throttleMode,
+          options: ["sticky", "hover"],
+          label: "ctrl throttle",
+        },
       }),
       Camera: folder({
         fov: { value: DEFAULTS.fov, min: 60, max: 150, step: 1 },
@@ -215,6 +223,11 @@ export function TuningPanel() {
       metric: v.metric,
     });
     useDroneStore.getState().setShowDroneBody(v.showDroneBody);
+
+    // Controller throttle feel lives in the gamepad store (read by advanceInput each frame).
+    if (v.controllerThrottle !== useGamepadStore.getState().throttleMode) {
+      useGamepadStore.getState().setThrottleMode(v.controllerThrottle as ControllerThrottleMode);
+    }
 
     // World settings live in their own store (kept out of the flight-tuning export).
     const w = useWorldStore.getState();

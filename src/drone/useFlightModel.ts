@@ -18,6 +18,7 @@ import { commandedRates } from "./flightModes";
 import type { ControlAxes } from "./flightModes";
 import { useTuning } from "../tuning/tuningStore";
 import { advanceInput, input } from "../input/useInput";
+import { sampleGroundUnderDrone, clampToGround } from "./groundCollision";
 
 // scratch — the loop is single-threaded and non-reentrant, so module-level
 // temporaries are safe and keep the hot path allocation-free.
@@ -68,10 +69,15 @@ function step(dt: number): void {
   _force.y -= G * p.mass;
   _force.addScaledVector(drone.velocity, -dragK);
 
-  // 9. integrate velocity & position. M2: free flight — no ground, no collision;
-  // the drone phases through terrain and buildings (collision is a later milestone).
+  // 9. integrate velocity & position. Free flight everywhere EXCEPT straight down:
+  // collision is downward-only (see groundCollision.ts), so the drone still phases
+  // through building sides and only rests when it descends onto the surface below.
   drone.velocity.addScaledVector(_force, dt / p.mass);
   drone.position.addScaledVector(drone.velocity, dt);
+
+  // 10. ground collision — clamp onto the surface sampled once this frame (cheap; the
+  // raycast itself ran in useFrame, not here). Skipped entirely when no ground is known.
+  clampToGround();
 
   drone.flightTime += dt;
 }
@@ -113,6 +119,7 @@ export function FlightModel({ droneRef }: { droneRef: RefObject<THREE.Group | nu
     if (useDroneStore.getState().paused) return;
 
     advanceInput(delta); // ramp virtual axes once per frame (consumes mouse delta)
+    sampleGroundUnderDrone(); // one downward raycast/frame; cached for every substep clamp
 
     accumulator += Math.min(delta, MAX_FRAME_DELTA);
     let n = 0;

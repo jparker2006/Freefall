@@ -4,6 +4,8 @@ import App from "./App";
 import { useTuning } from "./tuning/tuningStore";
 import { useDroneStore, drone } from "./drone/droneState";
 import { useWorldStore } from "./world/useWorldStore";
+import { useGeoStore } from "./world/useGeoStore";
+import { useGamepadStore } from "./input/gamepadStore";
 import { IS_TOUCH } from "./ui/device";
 
 // Mobile defaults (desktop unaffected): self-leveling Angle mode is far friendlier for
@@ -22,6 +24,8 @@ if (import.meta.env.DEV) {
     useTuning,
     useDroneStore,
     useWorldStore,
+    useGeoStore,
+    useGamepadStore,
     drone,
   };
 }

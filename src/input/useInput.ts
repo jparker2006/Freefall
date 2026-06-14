@@ -18,6 +18,7 @@ import { levaBridge } from "../tuning/levaBridge";
 import { CONTROLS } from "./controlConfig";
 import { useGeoStore } from "../world/useGeoStore";
 import { teleportTo, cycleTarget } from "../world/locations";
+import { useGamepadStore } from "./gamepadStore";
 import type { ControlAxes } from "../drone/flightModes";
 
 // --- module-level singletons (mutated by listeners; read by the flight loop) ---
@@ -109,6 +110,41 @@ export function consumeTouchPan(): { dz: number; dx: number } {
   return v;
 }
 
+// --- gamepad source (controller) -------------------------------------------------
+// Same shape as the touch source: inert until GamepadController calls setGamepadInput,
+// and `gpActive` gates every branch in advanceInput, so with no pad the seam runs the
+// original arithmetic with `+ 0` — byte-for-byte unchanged. Throttle is the sticky
+// setpoint by default (left-stick-Y deflection = rate of change, holds when centered);
+// the `'hover'` controllerThrottleMode makes it a direct center=hover position instead.
+// Yaw/pitch/roll are additive deadzoned-RAW values — commandedRates applies the expo
+// curve (same as keyboard/mouse), so feeding raw here avoids a double expo.
+const ZERO_GP = Object.freeze({ yaw: 0, pitch: 0, roll: 0 });
+let gpActive = false;
+let gpThrottleDefl = 0; // left-stick Y after deadzone, + = up = throttle rising
+const gpAxes = { yaw: 0, pitch: 0, roll: 0 };
+let gpPrecision = false;
+
+export function setGamepadInput(a: {
+  throttle: number;
+  yaw: number;
+  pitch: number;
+  roll: number;
+  precision: boolean;
+}): void {
+  gpActive = true;
+  gpThrottleDefl = a.throttle;
+  gpAxes.yaw = a.yaw;
+  gpAxes.pitch = a.pitch;
+  gpAxes.roll = a.roll;
+  gpPrecision = a.precision;
+}
+export function clearGamepadInput(): void {
+  gpActive = false;
+  gpThrottleDefl = 0;
+  gpAxes.yaw = gpAxes.pitch = gpAxes.roll = 0;
+  gpPrecision = false;
+}
+
 // internal ramped sub-axes for the binary keys
 let yawAxis = 0;
 let pitchKeyAxis = 0;
@@ -131,6 +167,17 @@ export function advanceInput(dt: number): typeof input {
   if (touchActive && touchThrottleHeld) {
     input.axes.throttle = clamp(touchAxes.throttle, 0, 1);
   }
+  // gamepad: 'sticky' integrates the setpoint at a rate set by left-stick-Y (analog W/S);
+  // 'hover' maps the stick directly so center = hover throttle (1/twr), self-centering.
+  if (gpActive) {
+    if (useGamepadStore.getState().throttleMode === "hover") {
+      const hover = clamp(1 / p.twr, 0, 1);
+      const d = gpThrottleDefl;
+      input.axes.throttle = clamp(d >= 0 ? hover + d * (1 - hover) : hover + d * hover, 0, 1);
+    } else {
+      input.axes.throttle = clamp(input.axes.throttle + gpThrottleDefl * THROTTLE_RATE * dt, 0, 1);
+    }
+  }
 
   // ramped key axes (full deflection in inputRampTime, decay to 0 on release)
   const step = dt / Math.max(p.inputRampTime, 1e-3);
@@ -149,12 +196,14 @@ export function advanceInput(dt: number): typeof input {
   mouseDX = 0;
   mouseDY = 0;
 
-  // touch axes add on top of keyboard+mouse, then clamp (ZERO_TOUCH on desktop = no-op).
+  // touch + gamepad axes add on top of keyboard+mouse, then clamp (both ZERO_* on
+  // desktop-without-pad = no-op, so the keyboard/mouse path is unchanged).
   const tx = touchActive ? touchAxes : ZERO_TOUCH;
-  input.axes.yaw = clamp(yawAxis + tx.yaw, -1, 1);
-  input.axes.pitch = clamp(pitchKeyAxis + mPitch + tx.pitch, -1, 1);
-  input.axes.roll = clamp(rollKeyAxis + mRoll + tx.roll, -1, 1);
-  input.precision = isPressed(CONTROLS.precision);
+  const gx = gpActive ? gpAxes : ZERO_GP;
+  input.axes.yaw = clamp(yawAxis + tx.yaw + gx.yaw, -1, 1);
+  input.axes.pitch = clamp(pitchKeyAxis + mPitch + tx.pitch + gx.pitch, -1, 1);
+  input.axes.roll = clamp(rollKeyAxis + mRoll + tx.roll + gx.roll, -1, 1);
+  input.precision = isPressed(CONTROLS.precision) || gpPrecision;
   input.locked = locked;
   return input;
 }

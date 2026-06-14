@@ -5,6 +5,7 @@ import { useDroneStore } from "../drone/droneState";
 import { useTuning } from "../tuning/tuningStore";
 import { useGeoStore } from "../world/useGeoStore";
 import { useWorldStore } from "../world/useWorldStore";
+import { useGamepadStore } from "../input/gamepadStore";
 import { StickIndicator } from "./StickIndicator";
 import { IS_TOUCH } from "../ui/device";
 import "./osd.css";
@@ -28,6 +29,7 @@ export function Osd() {
   const hudVisible = useDroneStore((s) => s.hudVisible);
   const paused = useDroneStore((s) => s.paused);
   const metric = useTuning((s) => s.metric);
+  const padConnected = useGamepadStore((s) => s.connected);
 
   // M3 orientation readouts (LA only). Selectors → re-render only when the shown
   // value changes, not every 12 Hz geo tick.
@@ -142,8 +144,9 @@ export function Osd() {
         </div>
       </div>
 
-      {/* center messages (desktop only — touch has no pointer lock to engage) */}
-      {!IS_TOUCH && (
+      {/* center messages (desktop only — touch has no pointer lock to engage; a connected
+          controller flies without mouse lock, so the prompt would be misleading). */}
+      {!IS_TOUCH && !padConnected && (
         <div className="center-msg">
           {!t.locked ? <div className="engage">◎ CLICK TO ENGAGE MOUSE</div> : null}
         </div>

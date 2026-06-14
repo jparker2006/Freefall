@@ -14,6 +14,7 @@ import { TouchLookLayer } from "./ui/TouchLookLayer";
 import { TouchButtons } from "./ui/TouchButtons";
 import { TouchSettings } from "./ui/TouchSettings";
 import { RotateGate } from "./ui/RotateGate";
+import { GamepadIndicator } from "./ui/GamepadIndicator";
 
 const Minimap = lazy(() => import("./hud/Minimap"));
 
@@ -25,6 +26,8 @@ export default function App() {
       <Osd />
       <TuningPanel />
       <LoadingOverlay />
+      {/* Controller presence chip (auto-detected; works alongside keyboard/mouse + touch). */}
+      <GamepadIndicator />
       {mode === "la" && (
         <Suspense fallback={null}>
           <Minimap />

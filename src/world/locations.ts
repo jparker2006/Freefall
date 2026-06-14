@@ -71,12 +71,18 @@ export function teleportTo(index: number): void {
 }
 
 // Cycle the nav target: auto-nearest (−1) → each roster slot → back to auto. If a
-// custom waypoint is active, G clears it first (reverting to the landmark cycle).
-export function cycleTarget(): void {
+// custom waypoint is active, it's cleared first (reverting to the landmark cycle).
+// `dir` defaults to +1 so the keyboard G path is unchanged; the controller D-pad passes
+// −1 for reverse. Range is [-1 .. LOCATIONS.length-1] (−1 = auto-nearest), wrapping.
+export function cycleTarget(dir: 1 | -1 = 1): void {
   const geo = useGeoStore.getState();
   if (geo.waypoint) {
     geo.clearWaypoint();
     return;
   }
-  geo.setTargetSel(geo.targetSel + 1 >= LOCATIONS.length ? -1 : geo.targetSel + 1);
+  const n = LOCATIONS.length;
+  let next = geo.targetSel + dir;
+  if (next >= n) next = -1;
+  else if (next < -1) next = n - 1;
+  geo.setTargetSel(next);
 }

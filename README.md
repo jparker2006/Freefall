@@ -8,7 +8,7 @@ minimap.
   in an instrumented greybox sandbox. See [`freefall-m1-spec.md`](./freefall-m1-spec.md).
 - **Milestone 2 — real Los Angeles (done):** the M1 drone now flies over streaming
   Google Photorealistic 3D Tiles, georeferenced over Westwood / Beverly Hills. Free
-  flight (no collision yet). Add an API key to see it ([below](#los-angeles-milestone-2));
+  flight then (ground collision was added later — see below). Add an API key to see it ([below](#los-angeles-milestone-2));
   without one it falls back to the greybox sandbox so the app always runs. See
   [`freefall-m2-spec.md`](./freefall-m2-spec.md).
 - **Milestone 3 — orientation (done):** a north-up street **minimap**, live
@@ -21,6 +21,17 @@ minimap.
   Mode 2, Angle default), a **landscape gate**, a reflowed minimal HUD, and a touch
   **settings sheet** — as one responsive codebase (the desktop keyboard+mouse experience
   is unchanged). See [`freefall-mobile-spec.md`](./freefall-mobile-spec.md).
+- **Ground collision (done):** the drone now rests when it descends onto whatever's
+  directly below it — a single **downward raycast** against the 3D tiles each frame finds
+  the surface, and the drone stops on it. You still fly **freely through the city** (the
+  photoreal mesh fuses ground + buildings into one surface, so downward-only IS "ground,
+  not buildings" — building *sides* never block you; landing on a rooftop is expected).
+  Throttle back up to lift off. The greybox sandbox clamps to its floor plane, and if no
+  tiles have streamed in below yet the drone keeps flying (never trapped).
+- **Gamepad / controller (done):** PS4 / PS5 / Xbox / any standard controller as one more
+  auto-detected input source — dual analog sticks (FPV Mode 2), mapped buttons, and rumble
+  on landing. Keyboard/mouse + touch stay live (last-active wins). See
+  [Gamepad / controller](#gamepad--controller).
 
 ## Stack
 
@@ -116,6 +127,26 @@ UI for testing.
 - **Performance:** crisp-first — detail stays near desktop; the pixel ratio is capped (the
   biggest mobile win) and tile memory is tightened, trading some fps for sharpness.
 
+## Gamepad / controller
+
+Plug in or pair a **PS4 / PS5 / Xbox / any standard controller** and press a button — the
+HUD confirms with a 🎮 chip, and you fly with the two analog sticks (FPV **Mode 2**). It's
+just another input source on the same pipeline: keyboard/mouse and touch stay live, and the
+last one you touch wins. No drivers, no setup (uses the browser Gamepad API).
+
+- **Sticks (Mode 2):** left = **throttle** (sticky/rate — push to change, holds when you
+  let go; the analog version of W/S) + **yaw**; right = **pitch / roll**. A radial deadzone
+  keeps resting drift out. Controller flying defaults to **Acro**.
+- **Throttle feel:** a `ctrl throttle` toggle in the tuning panel's **Input** folder swaps
+  between `sticky` (default) and `hover` (center-stick = hover, self-centering).
+- **Buttons:** Options = pause/free-look · △ = mode · ○ = respawn · ✕ = drop waypoint (hold
+  to clear) · □ = map · Share = HUD · L1/R1 = prev/next location · D-pad ◀▶ = cycle nav
+  target · L2 = precision.
+- **Paused:** the sticks fly the free camera (right = look, left = dolly/truck); Options
+  resumes.
+- **Haptics:** a subtle rumble on touchdown, scaled to how hard you land (Chrome/Edge;
+  Safari/Firefox fly fine but may not rumble).
+
 ## Controls
 
 | Input | Action |
@@ -137,6 +168,7 @@ UI for testing.
 | **Right-click map** / **C** | Clear the waypoint |
 | **H** | Toggle HUD · **`** Toggle tuning panel · **U** Toggle units |
 | **Touch** | Auto-detected: dual virtual sticks + on-screen buttons — see [Mobile / touch](#mobile--touch) |
+| **Gamepad** | Auto-detected: dual sticks (Mode 2) + mapped buttons + rumble — see [Gamepad / controller](#gamepad--controller) |
 
 ## Flight model
 
@@ -159,8 +191,9 @@ paste back into `src/constants.ts` `DEFAULTS`.
 ```
 src/
   scene/     Scene (canvas, rig, driver) + Sandbox · FreeCamController (pause free-cam)
-  drone/     droneState (store) · flightModes (acro/angle) · useFlightModel (the loop)
-  input/     useInput (ramped axes, pointer lock) · controlConfig (keymap)
+  drone/     droneState (store) · flightModes (acro/angle) · useFlightModel (the loop) · groundCollision (downward-only ground rest)
+  input/     useInput (ramped axes, pointer lock, touch/gamepad seams) · controlConfig (keymap) ·
+             gamepad (Gamepad-API helpers) · GamepadController (per-frame poll) · gamepadStore
   camera/    FpvCamera (parented, uptilt, wide FOV)
   hud/        Osd (retro green OSD) · osd-mobile.css (touch reflow) · StickIndicator · Minimap (MapLibre, lazy)
   ui/        device (touch + orientation detect) · VirtualSticks · TouchLookLayer · TouchButtons · TouchSettings · RotateGate · touch.css

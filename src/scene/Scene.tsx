@@ -10,6 +10,7 @@ import { FpvCamera } from "../camera/FpvCamera";
 import { FlightModel } from "../drone/useFlightModel";
 import { FreeCamController } from "./FreeCamController";
 import { InputBridge } from "../input/useInput";
+import { GamepadController } from "../input/GamepadController";
 import { Effects } from "../postfx/Effects";
 import { useDroneStore } from "../drone/droneState";
 import { useWorldStore } from "../world/useWorldStore";
@@ -98,6 +99,8 @@ export function Scene() {
       <World />
       <WaypointGuide />
 
+      {/* Mounted before FlightModel so its per-frame axis writes precede advanceInput. */}
+      <GamepadController />
       <FlightModel droneRef={droneRef} />
       <FreeCamController droneRef={droneRef} />
       <InputBridge />

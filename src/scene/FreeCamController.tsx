@@ -13,6 +13,7 @@ import * as THREE from "three";
 import { useDroneStore } from "../drone/droneState";
 import { useTuning } from "../tuning/tuningStore";
 import { consumeLook, consumeTouchPan, isDown } from "../input/useInput";
+import { useGamepadStore } from "../input/gamepadStore";
 import { CONTROLS } from "../input/controlConfig";
 import { IS_TOUCH } from "../ui/device";
 import { DEG2RAD } from "../lib/mathUtils";
@@ -89,8 +90,9 @@ export function FreeCamController({
     }
 
     // touch: 2-finger drag dollies/trucks the free camera (there's no WASD on mobile).
-    // The 1-finger look path is unchanged — it feeds the same mouse delta consumed above.
-    if (IS_TOUCH) {
+    // gamepad: the left stick feeds the SAME pan accumulator during pause (right-stick look
+    // already feeds the mouse delta consumed above, so no change needed for look).
+    if (IS_TOUCH || useGamepadStore.getState().connected) {
       const { dz, dx: pdx } = consumeTouchPan();
       if (dz !== 0 || pdx !== 0) {
         _fwd.set(0, 0, -1).applyQuaternion(camera.quaternion);
