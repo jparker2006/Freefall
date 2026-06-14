@@ -155,7 +155,7 @@ export function TuningPanel() {
         },
         errorTarget: {
           value: useWorldStore.getState().errorTarget,
-          min: 4,
+          min: 6, // floor: below this the GPU can run out of VRAM (WebGL context loss)
           max: 48,
           step: 1,
           label: "detail (lower=sharp)",

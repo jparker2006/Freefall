@@ -14,6 +14,15 @@
   text-shadow: 0 0 8px rgba(43, 255, 140, 0.55);
   pointer-events: none;
 }
+/* GPU out-of-memory variant — amber, attention-grabbing */
+.ff-loading.ff-oom {
+  color: #ffc44d;
+  text-shadow: 0 0 8px rgba(255, 196, 77, 0.55);
+}
+.ff-loading.ff-oom .ff-loading-sub {
+  opacity: 0.9;
+  animation: none;
+}
 .ff-loading-inner {
   text-align: center;
 }

@@ -9,6 +9,22 @@ export function LoadingOverlay() {
   const loading = useWorldStore((s) => s.loading);
   const apiKeyMissing = useWorldStore((s) => s.apiKeyMissing);
   const tileError = useWorldStore((s) => s.tileError);
+  const contextLost = useWorldStore((s) => s.contextLost);
+
+  // Highest priority: the WebGL context died (GPU out of memory). The canvas is
+  // black, so explain it full-screen instead of leaving a mystery.
+  if (contextLost) {
+    return (
+      <div className="ff-loading ff-oom">
+        <div className="ff-loading-inner">
+          <div className="ff-loading-title">GPU OUT OF MEMORY</div>
+          <div className="ff-loading-sub">
+            Too much tile detail. Reload (⌘R / Ctrl-R), then raise the World ▸ detail value.
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (mode === "la" && loading) {
     return (
