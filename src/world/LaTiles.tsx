@@ -34,6 +34,32 @@ import {
 import { GOOGLE_API_KEY, useWorldStore } from "./useWorldStore";
 import { ANCHOR_LAT_RAD, ANCHOR_LON_RAD, ANCHOR_HEIGHT_M } from "./anchor";
 import { GeoPublisher } from "./GeoPublisher";
+import { IS_TOUCH } from "../ui/device";
+
+const GIGABYTE = 1024 ** 3;
+
+// Tighten the tile LRU byte budget so offscreen tiles unload sooner. Kept behind a function
+// boundary (taking the instance as a plain object) so it reads as configuring the renderer,
+// not mutating React state.
+function applyMobileTileBudget(tilesInstance: object): void {
+  const cache = (tilesInstance as { lruCache?: { minBytesSize: number; maxBytesSize: number } })
+    .lruCache;
+  if (cache) {
+    cache.minBytesSize = 0.1 * GIGABYTE; // ~107 MB
+    cache.maxBytesSize = 0.2 * GIGABYTE; // ~215 MB — full → unload kicks in
+  }
+}
+
+// Touch-only: mobile GPUs have far less memory than the M-series desktops the defaults
+// (0.3/0.4 GB) target. The dpr cap is the primary headroom lever (see Scene); this is
+// belt-and-suspenders.
+function MobileTileBudget(): null {
+  const tiles = useContext(TilesRendererContext);
+  useEffect(() => {
+    if (tiles) applyMobileTileBudget(tiles);
+  }, [tiles]);
+  return null;
+}
 
 // Flips the loading overlay off once tiles settle — for BOTH the initial load and
 // every M3 teleport (re-anchor). It re-arms whenever `loadEpoch` changes (teleport
@@ -157,9 +183,16 @@ export function LaTiles() {
       <TilesPlugin plugin={TileCompressionPlugin} />
       <TilesPlugin plugin={UnloadTilesPlugin} />
       <TilesPlugin plugin={TilesFadePlugin} />
-      {/* Google credit (ToS). Bottom-left by default — lifted above the relocated
-          stick cluster so the HUD elements don't collide (see osd.css). */}
-      <TilesAttributionOverlay style={{ left: 12, bottom: 128, right: "auto" }} />
+      {/* Google credit (ToS, must stay visible). Desktop: bottom-left above the stick
+          cluster. Touch: bottom-center, clear of the bottom-corner thumb zones. */}
+      <TilesAttributionOverlay
+        style={
+          IS_TOUCH
+            ? { left: "50%", bottom: 4, right: "auto", transform: "translateX(-50%)" }
+            : { left: 12, bottom: 128, right: "auto" }
+        }
+      />
+      {IS_TOUCH && <MobileTileBudget />}
       <TilesLoadingTracker />
       <GeoPublisher reorientRef={reorientRef} />
     </TilesRenderer>

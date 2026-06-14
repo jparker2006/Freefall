@@ -4,6 +4,7 @@
 // leva group), the atmosphere mood, and the startup loading / API-key state.
 import { create } from "zustand";
 import type { MoodName } from "./moods";
+import { IS_TOUCH } from "../ui/device";
 
 // Vite exposes only VITE_-prefixed env vars to the client. Empty/missing key →
 // fly the greybox sandbox instead of LA (graceful fallback, no hard failure).
@@ -44,7 +45,10 @@ export const useWorldStore = create<WorldStore>((set) => ({
   // the old 12 yet lighter at the capped dpr 1.5; the slider floor (6) + dpr cap keep
   // it out of the GPU-memory zone that loses the WebGL context.
   errorTarget: 10,
-  drawDistance: 14000, // ~14 km — far skyline fades into haze (see moods fog)
+  // ~14 km on desktop; ~10 km on touch — a shorter draw distance cuts the tile count in
+  // the frustum (memory/perf) while the M2 fog hides the nearer cutoff. Detail (errorTarget)
+  // stays crisp; the dpr cap is the real headroom lever. Both are tunable in the settings sheet.
+  drawDistance: IS_TOUCH ? 10000 : 14000,
   mood: "daylight",
   contextLost: false,
   setMode: (m) => set({ mode: m, loading: m === "la" && HAS_API_KEY }),

@@ -16,6 +16,7 @@ import "./minimap.css";
 import { useGeoStore } from "../world/useGeoStore";
 import { useDroneStore } from "../drone/droneState";
 import { LOCATIONS, teleportTo } from "../world/locations";
+import { IS_TOUCH } from "../ui/device";
 
 // One swappable config. Keyless OpenFreeMap vector by default; set VITE_MAP_STYLE_URL
 // to a MapTiler/other style URL to upgrade. (Fallbacks if the host is unreachable:
@@ -190,15 +191,43 @@ export default function Minimap() {
     return () => cancelAnimationFrame(id);
   }, [expanded]);
 
+  const hint = expanded
+    ? IS_TOUCH
+      ? "TAP A PIN · ✕ CLOSE"
+      : "TAP A PIN · M / ESC CLOSE"
+    : IS_TOUCH
+      ? "TAP TO OPEN"
+      : "M MAP";
+
   return (
     <div
       ref={hostRef}
-      className={`ff-minimap${expanded ? " expanded" : ""}${paused ? " ff-minimap--hidden" : ""}`}
+      className={`ff-minimap${expanded ? " expanded" : ""}${paused ? " ff-minimap--hidden" : ""}${IS_TOUCH ? " is-touch" : ""}`}
     >
       <div className="ff-mm-map" />
       <div className="ff-mm-n">N</div>
       <div className="ff-mm-frame" />
-      <div className="ff-mm-hint">{expanded ? "TAP A PIN · M / ESC CLOSE" : "M MAP"}</div>
+      {/* touch: a tap anywhere on the collapsed pill opens it (so taps don't drop a
+          waypoint); an explicit ✕ closes the expanded map (no ESC key on mobile). */}
+      {IS_TOUCH && !expanded && (
+        <button
+          type="button"
+          className="ff-mm-tap"
+          aria-label="Open map"
+          onClick={() => useGeoStore.getState().setExpanded(true)}
+        />
+      )}
+      {IS_TOUCH && expanded && (
+        <button
+          type="button"
+          className="ff-mm-close"
+          aria-label="Close map"
+          onClick={() => useGeoStore.getState().setExpanded(false)}
+        >
+          ✕
+        </button>
+      )}
+      <div className="ff-mm-hint">{hint}</div>
     </div>
   );
 }

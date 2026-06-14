@@ -17,6 +17,10 @@ minimap.
 - **Add-on — waypoint guidance + pause/free-look (done):** drop a yellow waypoint on
   the map for a 3D guide line + beacon + minimap route; **Space** to freeze and free-fly
   the camera for cinematic framing. See [`freefall-addon-spec.md`](./freefall-addon-spec.md).
+- **Mobile / touch (done):** fully playable on phones — **dual virtual sticks** (FPV
+  Mode 2, Angle default), a **landscape gate**, a reflowed minimal HUD, and a touch
+  **settings sheet** — as one responsive codebase (the desktop keyboard+mouse experience
+  is unchanged). See [`freefall-mobile-spec.md`](./freefall-mobile-spec.md).
 
 ## Stack
 
@@ -91,6 +95,27 @@ Right-click the map or press **C** to clear it (teleporting or **G** clears it t
 The HUD drops to a `PAUSED` badge for clean capture while tiles keep streaming.
 **Space** again returns to the drone's view and resumes flight with momentum intact.
 
+## Mobile / touch
+
+On a touchscreen Freefall switches to a touch scheme automatically (detected via a coarse
+pointer) — the desktop keyboard+mouse build is byte-for-byte unchanged. It's **landscape
+only**: portrait shows a rotate prompt (and locks to landscape where the browser allows;
+iOS can't lock, so just turn the device). Append `?touch=1` / `?desktop=1` to force either
+UI for testing.
+
+- **Dual virtual sticks (FPV "Mode 2"):** left = vertical **throttle** (ratchets up from
+  hover and holds where you lift) + horizontal **yaw**; right = **pitch / roll** (both
+  self-center). Both float to where your thumb lands, and both thumbs work at once. Mobile
+  defaults to **Angle** (self-leveling); switch to Acro with the mode button.
+- **Button cluster** (top): pause, mode, respawn, nav target, HUD, and a **⚙ settings
+  sheet** (the leva replacement) — flight mode, tile detail, draw distance, units.
+- **Minimap** collapses to a tap-to-open pill (top-right) and expands near-full-screen
+  with a ✕ to close.
+- **Pause** freezes the drone for a free camera: **one finger** looks, **two fingers**
+  dolly/truck. The HUD drops to a `PAUSED` badge for clean capture.
+- **Performance:** crisp-first — detail stays near desktop; the pixel ratio is capped (the
+  biggest mobile win) and tile memory is tightened, trading some fps for sharpness.
+
 ## Controls
 
 | Input | Action |
@@ -111,6 +136,7 @@ The HUD drops to a `PAUSED` badge for clean capture while tiles keep streaming.
 | **Click expanded map** | Place / move the yellow waypoint |
 | **Right-click map** / **C** | Clear the waypoint |
 | **H** | Toggle HUD · **`** Toggle tuning panel · **U** Toggle units |
+| **Touch** | Auto-detected: dual virtual sticks + on-screen buttons — see [Mobile / touch](#mobile--touch) |
 
 ## Flight model
 
@@ -136,7 +162,8 @@ src/
   drone/     droneState (store) · flightModes (acro/angle) · useFlightModel (the loop)
   input/     useInput (ramped axes, pointer lock) · controlConfig (keymap)
   camera/    FpvCamera (parented, uptilt, wide FOV)
-  hud/        Osd (retro green OSD) · StickIndicator · Minimap (MapLibre, lazy)
+  hud/        Osd (retro green OSD) · osd-mobile.css (touch reflow) · StickIndicator · Minimap (MapLibre, lazy)
+  ui/        device (touch + orientation detect) · VirtualSticks · TouchLookLayer · TouchButtons · TouchSettings · RotateGate · touch.css
   postfx/    Effects (fisheye + vignette + chroma + speed blur, one pass)
   world/     useWorldStore · World (LA⇄sandbox) · LaTiles (Google 3D Tiles) ·
              WorldEnvironment (mood) · moods · anchor (coordinate bridge) · LoadingOverlay ·

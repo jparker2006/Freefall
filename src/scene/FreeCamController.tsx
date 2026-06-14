@@ -12,14 +12,16 @@ import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { useDroneStore } from "../drone/droneState";
 import { useTuning } from "../tuning/tuningStore";
-import { consumeLook, isDown } from "../input/useInput";
+import { consumeLook, consumeTouchPan, isDown } from "../input/useInput";
 import { CONTROLS } from "../input/controlConfig";
+import { IS_TOUCH } from "../ui/device";
 import { DEG2RAD } from "../lib/mathUtils";
 
 const LOOK_SENS = 0.0022; // rad per pixel of mouse motion
 const MOVE_SPEED = 60; // m/s base
 const FAST_MULT = 4; // Shift
 const PITCH_LIMIT = Math.PI / 2 - 0.02; // avoid gimbal flip at straight up/down
+const TOUCH_PAN_GAIN = 0.25; // m per px of 2-finger drag (touch free-cam dolly/truck)
 
 // module scratch — single-threaded useFrame, allocation-free
 const _euler = new THREE.Euler(0, 0, 0, "YXZ");
@@ -84,6 +86,18 @@ export function FreeCamController({
       _right.set(1, 0, 0).applyQuaternion(camera.quaternion);
       camera.position.addScaledVector(_fwd, mz * step);
       camera.position.addScaledVector(_right, mx * step);
+    }
+
+    // touch: 2-finger drag dollies/trucks the free camera (there's no WASD on mobile).
+    // The 1-finger look path is unchanged — it feeds the same mouse delta consumed above.
+    if (IS_TOUCH) {
+      const { dz, dx: pdx } = consumeTouchPan();
+      if (dz !== 0 || pdx !== 0) {
+        _fwd.set(0, 0, -1).applyQuaternion(camera.quaternion);
+        _right.set(1, 0, 0).applyQuaternion(camera.quaternion);
+        camera.position.addScaledVector(_fwd, dz * TOUCH_PAN_GAIN);
+        camera.position.addScaledVector(_right, pdx * TOUCH_PAN_GAIN);
+      }
     }
 
     camera.updateMatrixWorld();

@@ -1,0 +1,74 @@
+/* Mobile / touch OSD reflow. Scoped to the `.is-touch` class on the OSD root, so the
+   desktop layout is byte-for-byte untouched. Goal: keep only the minimal essentials, lay
+   them along the top + edges clear of the bottom-corner thumb zones, and respect the
+   safe-area insets (notch / home indicator). The virtual sticks replace the on-screen
+   stick indicators; the left-edge throttle gauge replaces the bottom throttle bar. */
+
+/* Altitude → top-left corner. */
+.osd.is-touch .alt {
+  top: calc(8px + var(--safe-top));
+  left: calc(12px + var(--safe-left));
+  transform: none;
+}
+/* Speed → top-right corner. */
+.osd.is-touch .spd {
+  top: calc(8px + var(--safe-top));
+  right: calc(12px + var(--safe-right));
+  left: auto;
+  transform: none;
+}
+/* Tighten the big value + drop the vertical-speed line (less critical on a small screen). */
+.osd.is-touch .value {
+  font-size: 18px;
+}
+.osd.is-touch .vspd {
+  display: none;
+}
+
+/* The MODE button (in the touch cluster) shows ACRO/ANGLE, so the badge is redundant. */
+.osd.is-touch .mode {
+  display: none;
+}
+/* Heading sits centered just below the top button row. */
+.osd.is-touch .heading {
+  top: calc(52px + var(--safe-top));
+  font-size: 14px;
+}
+/* Timer tucks under the speed in the top-right. */
+.osd.is-touch .timer {
+  top: calc(34px + var(--safe-top));
+  right: calc(12px + var(--safe-right));
+  font-size: 12px;
+}
+
+/* Neighborhood + nav → centered just under the heading. */
+.osd.is-touch .place {
+  top: calc(76px + var(--safe-top));
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  max-width: 86vw;
+  text-align: center;
+}
+.osd.is-touch .place-hood {
+  font-size: 13px;
+}
+
+/* Throttle reads off the left-stick gauge now — drop the bottom bar (it sat in a thumb
+   zone anyway). */
+.osd.is-touch .throttle {
+  display: none;
+}
+
+/* Keep the artificial horizon a touch tighter so it doesn't run under the top readouts. */
+.osd.is-touch .horizon-clip {
+  height: 40vh;
+}
+
+/* Pause view: nudge the badge/hint clear of the safe-area edges. */
+.osd.osd-paused.is-touch .paused-badge {
+  top: calc(10px + var(--safe-top));
+}
+.osd.osd-paused.is-touch .paused-hint {
+  bottom: calc(10px + var(--safe-bottom));
+}

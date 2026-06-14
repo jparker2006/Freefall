@@ -11,6 +11,7 @@ import { useDroneStore } from "../drone/droneState";
 import { useWorldStore } from "../world/useWorldStore";
 import type { WorldMode } from "../world/useWorldStore";
 import { levaBridge } from "./levaBridge";
+import { IS_TOUCH } from "../ui/device";
 
 // The panel shows ms for time-constants and a couple of renamed keys; this is the
 // shape of leva's value bag (folders flatten to unique leaf keys).
@@ -222,5 +223,7 @@ export function TuningPanel() {
     if (v.worldMode !== w.mode) w.setMode(v.worldMode as WorldMode);
   }, [values]);
 
-  return <Leva hidden={!tuningVisible} />;
+  // On touch the leva panel is unusable (drag-number inputs) and intercepts touches, so it
+  // never shows — the TouchSettings sheet replaces it (and reuses the same tuningVisible flag).
+  return <Leva hidden={IS_TOUCH || !tuningVisible} />;
 }

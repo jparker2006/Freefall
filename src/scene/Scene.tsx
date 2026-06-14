@@ -13,11 +13,14 @@ import { InputBridge } from "../input/useInput";
 import { Effects } from "../postfx/Effects";
 import { useDroneStore } from "../drone/droneState";
 import { useWorldStore } from "../world/useWorldStore";
+import { IS_TOUCH } from "../ui/device";
 
-// Dev FPS panel — hidden during pause/free-look so capture footage stays clean.
+// Dev FPS panel — hidden during pause/free-look (clean capture) and on touch (it would
+// overlap the reflowed top-left readouts; perf is tuned via the settings sheet there).
 function DevStats() {
   const paused = useDroneStore((s) => s.paused);
-  return paused ? null : <Stats />;
+  if (IS_TOUCH || paused) return null;
+  return <Stats />;
 }
 
 // Surfaces a WebGL context loss (GPU out of memory from too-high tile detail) as a
@@ -41,6 +44,23 @@ function ContextLossGuard(): null {
   return null;
 }
 
+// Dev-only: expose the live camera/scene on window.__freefall for console + test
+// inspection (the free-look camera detaches from the drone rig during pause, so it's
+// otherwise unreachable). Compiled out of production via import.meta.env.DEV.
+function DevBridge(): null {
+  const camera = useThree((s) => s.camera);
+  const scene = useThree((s) => s.scene);
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    const w = window as unknown as Record<string, unknown>;
+    const ff = (w.__freefall as Record<string, unknown> | undefined) ?? {};
+    ff.camera = camera;
+    ff.scene = scene;
+    w.__freefall = ff;
+  }, [camera, scene]);
+  return null;
+}
+
 // The drone mesh is invisible by default (true FPV). Toggle on for debugging via
 // the leva Debug panel.
 function DroneBody() {
@@ -58,10 +78,12 @@ export function Scene() {
 
   return (
     <Canvas
-      // Cap pixel ratio at 1.5 (not 2): tile detail is screen-space-error based, so a
-      // lower buffer resolution needs far fewer high-res tiles for the same detail —
-      // big GPU-memory headroom on retina M-series, still crisp.
-      dpr={[1, 1.5]}
+      // Cap pixel ratio: tile detail is screen-space-error based, so a lower buffer
+      // resolution needs far fewer high-res tiles for the same detail — big GPU-memory
+      // headroom, still crisp. 1.5 on desktop (retina M-series); 1.25 on touch, where
+      // phones report dpr 2.5–3 natively — this is the single biggest mobile perf win and
+      // the lever that keeps "crisp-first" detail from exhausting weaker mobile GPUs.
+      dpr={IS_TOUCH ? [1, 1.25] : [1, 1.5]}
       frameloop="always"
       gl={{ antialias: true, powerPreference: "high-performance" }}
     >
@@ -80,6 +102,7 @@ export function Scene() {
       <FreeCamController droneRef={droneRef} />
       <InputBridge />
       <ContextLossGuard />
+      <DevBridge />
       <Effects />
       <DevStats />
     </Canvas>

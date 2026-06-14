@@ -44,6 +44,71 @@ export function consumeLook(): { dx: number; dy: number } {
   return d;
 }
 
+// --- touch source (mobile virtual sticks) -----------------------------------------
+// Inert until <VirtualSticks> calls setTouchAxes. `touchActive` gates every touch branch
+// in advanceInput, so on desktop (where nothing ever calls setTouchAxes) the seam runs the
+// original arithmetic with `+ 0` — byte-for-byte unchanged. Throttle is the sticky setpoint
+// while a left-stick finger is down; on release we stop writing it, so it holds in place
+// exactly like the keyboard's persistent throttle. Yaw/pitch/roll are additive and the stick
+// reports 0 on release → self-levels in Angle mode, mirroring the mouse path.
+const ZERO_TOUCH = Object.freeze({ yaw: 0, pitch: 0, roll: 0 });
+let touchActive = false;
+let touchThrottleHeld = false;
+const touchAxes = { throttle: 0, yaw: 0, pitch: 0, roll: 0 };
+
+export function setTouchAxes(a: {
+  throttle?: number;
+  yaw?: number;
+  pitch?: number;
+  roll?: number;
+}): void {
+  touchActive = true;
+  if (a.throttle !== undefined) touchAxes.throttle = a.throttle;
+  if (a.yaw !== undefined) touchAxes.yaw = a.yaw;
+  if (a.pitch !== undefined) touchAxes.pitch = a.pitch;
+  if (a.roll !== undefined) touchAxes.roll = a.roll;
+}
+export function setTouchThrottleHeld(held: boolean): void {
+  touchThrottleHeld = held;
+}
+export function clearTouchAxes(): void {
+  touchActive = false;
+  touchThrottleHeld = false;
+  touchAxes.yaw = touchAxes.pitch = touchAxes.roll = 0;
+}
+/** Live throttle setpoint — the left nub seeds from this so the stick never jumps on touch. */
+export function getThrottle(): number {
+  return input.axes.throttle;
+}
+
+// Respawn: reset the drone, settle the throttle setpoint to hover, and pre-charge thrust so
+// it holds altitude (no post-reset sink). Shared by the R key and the touch respawn button.
+export function respawn(): void {
+  resetFlight();
+  const tu = useTuning.getState();
+  input.axes.throttle = clamp(1 / tu.twr, 0, 1);
+  drone.thrustMag = tu.mass * G;
+}
+
+// Touch free-look during pause: 1-finger look feeds the SAME mouseDX/DY that consumeLook()
+// drains (so FreeCamController's look code is unchanged); 2-finger drag feeds a separate
+// dolly accumulator the FreeCamController consumes.
+export function pushTouchLook(dx: number, dy: number): void {
+  mouseDX += dx;
+  mouseDY += dy;
+}
+const touchPan = { dz: 0, dx: 0 };
+export function pushTouchPan(dz: number, dx: number): void {
+  touchPan.dz += dz;
+  touchPan.dx += dx;
+}
+export function consumeTouchPan(): { dz: number; dx: number } {
+  const v = { dz: touchPan.dz, dx: touchPan.dx };
+  touchPan.dz = 0;
+  touchPan.dx = 0;
+  return v;
+}
+
 // internal ramped sub-axes for the binary keys
 let yawAxis = 0;
 let pitchKeyAxis = 0;
@@ -61,6 +126,11 @@ export function advanceInput(dt: number): typeof input {
   const tDir =
     (isPressed(CONTROLS.throttleUp) ? 1 : 0) - (isPressed(CONTROLS.throttleDown) ? 1 : 0);
   input.axes.throttle = clamp(input.axes.throttle + tDir * THROTTLE_RATE * dt, 0, 1);
+  // touch: the left stick owns the throttle setpoint while held; on release we stop
+  // writing → it holds (sticky), matching the keyboard's persistent throttle above.
+  if (touchActive && touchThrottleHeld) {
+    input.axes.throttle = clamp(touchAxes.throttle, 0, 1);
+  }
 
   // ramped key axes (full deflection in inputRampTime, decay to 0 on release)
   const step = dt / Math.max(p.inputRampTime, 1e-3);
@@ -79,9 +149,11 @@ export function advanceInput(dt: number): typeof input {
   mouseDX = 0;
   mouseDY = 0;
 
-  input.axes.yaw = clamp(yawAxis, -1, 1);
-  input.axes.pitch = clamp(pitchKeyAxis + mPitch, -1, 1);
-  input.axes.roll = clamp(rollKeyAxis + mRoll, -1, 1);
+  // touch axes add on top of keyboard+mouse, then clamp (ZERO_TOUCH on desktop = no-op).
+  const tx = touchActive ? touchAxes : ZERO_TOUCH;
+  input.axes.yaw = clamp(yawAxis + tx.yaw, -1, 1);
+  input.axes.pitch = clamp(pitchKeyAxis + mPitch + tx.pitch, -1, 1);
+  input.axes.roll = clamp(rollKeyAxis + mRoll + tx.roll, -1, 1);
   input.precision = isPressed(CONTROLS.precision);
   input.locked = locked;
   return input;
@@ -101,10 +173,7 @@ export function InputBridge(): null {
           if (e.code === "Tab") e.preventDefault(); // keep focus on the canvas
           useDroneStore.getState().toggleMode();
         } else if (e.code === CONTROLS.reset) {
-          resetFlight();
-          const tu = useTuning.getState();
-          input.axes.throttle = clamp(1 / tu.twr, 0, 1); // settle to hover
-          drone.thrustMag = tu.mass * G; // pre-charge so it holds, no post-reset sink
+          respawn();
         } else if (e.code === CONTROLS.hud) {
           useDroneStore.getState().toggleHud();
         } else if (e.code === CONTROLS.tuning) {

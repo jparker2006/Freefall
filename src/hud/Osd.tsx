@@ -6,7 +6,9 @@ import { useTuning } from "../tuning/tuningStore";
 import { useGeoStore } from "../world/useGeoStore";
 import { useWorldStore } from "../world/useWorldStore";
 import { StickIndicator } from "./StickIndicator";
+import { IS_TOUCH } from "../ui/device";
 import "./osd.css";
+import "./osd-mobile.css";
 
 const PX_PER_DEG = 6; // artificial-horizon pitch scale
 
@@ -43,9 +45,13 @@ export function Osd() {
   // for a clean capture view — just a small PAUSED badge + a controls hint.
   if (paused) {
     return (
-      <div className="osd osd-paused">
+      <div className={`osd osd-paused${IS_TOUCH ? " is-touch" : ""}`}>
         <div className="paused-badge">❚❚ PAUSED · FREE LOOK</div>
-        <div className="paused-hint">MOUSE LOOK · WASD MOVE · SHIFT FAST · SPACE RESUME</div>
+        <div className="paused-hint">
+          {IS_TOUCH
+            ? "1-FINGER LOOK · 2-FINGER MOVE · ❚❚ RESUME"
+            : "MOUSE LOOK · WASD MOVE · SHIFT FAST · SPACE RESUME"}
+        </div>
       </div>
     );
   }
@@ -65,7 +71,7 @@ export function Osd() {
   const horizonTransform = `translateY(${t.pitchDeg * PX_PER_DEG}px) rotate(${-t.rollDeg}deg)`;
 
   return (
-    <div className="osd">
+    <div className={`osd${IS_TOUCH ? " is-touch" : ""}`}>
       {/* artificial horizon */}
       <div className="horizon-clip">
         <div className="horizon" style={{ transform: horizonTransform }}>
@@ -136,30 +142,38 @@ export function Osd() {
         </div>
       </div>
 
-      {/* center messages */}
-      <div className="center-msg">
-        {!t.locked ? <div className="engage">◎ CLICK TO ENGAGE MOUSE</div> : null}
-      </div>
+      {/* center messages (desktop only — touch has no pointer lock to engage) */}
+      {!IS_TOUCH && (
+        <div className="center-msg">
+          {!t.locked ? <div className="engage">◎ CLICK TO ENGAGE MOUSE</div> : null}
+        </div>
+      )}
 
-      {/* virtual gimbals (Mode-2 layout) */}
-      <StickIndicator
-        side="left"
-        label="THR / YAW"
-        nx={(t.stickYaw + 1) / 2}
-        ny={t.stickThrottle}
-      />
-      <StickIndicator
-        side="right"
-        label="PITCH / ROLL"
-        nx={(t.stickRoll + 1) / 2}
-        ny={(t.stickPitch + 1) / 2}
-      />
+      {/* virtual gimbals (Mode-2 layout) — desktop only; touch has the live sticks */}
+      {!IS_TOUCH && (
+        <>
+          <StickIndicator
+            side="left"
+            label="THR / YAW"
+            nx={(t.stickYaw + 1) / 2}
+            ny={t.stickThrottle}
+          />
+          <StickIndicator
+            side="right"
+            label="PITCH / ROLL"
+            nx={(t.stickRoll + 1) / 2}
+            ny={(t.stickPitch + 1) / 2}
+          />
+        </>
+      )}
 
-      <div className="hint">
-        CLICK = MOUSE LOCK · W/S THROTTLE · A/D YAW · MOUSE or ARROWS PITCH/ROLL · TAB MODE · R
-        RESET · SHIFT PRECISION · H HUD · ` PANEL · U UNITS · M MAP · 1–9 GO · G TARGET · SPACE
-        PAUSE · CLICK MAP = WAYPOINT · C CLEAR
-      </div>
+      {!IS_TOUCH && (
+        <div className="hint">
+          CLICK = MOUSE LOCK · W/S THROTTLE · A/D YAW · MOUSE or ARROWS PITCH/ROLL · TAB MODE · R
+          RESET · SHIFT PRECISION · H HUD · ` PANEL · U UNITS · M MAP · 1–9 GO · G TARGET · SPACE
+          PAUSE · CLICK MAP = WAYPOINT · C CLEAR
+        </div>
+      )}
 
       <div className="scanlines" />
       <div className="vhs-vignette" />

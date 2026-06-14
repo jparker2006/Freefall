@@ -148,3 +148,53 @@
 .ff-minimap .maplibregl-ctrl-attrib a {
   color: #9fefc6;
 }
+
+/* ---- touch: collapsed = small tappable pill in the top-right, clear of the right thumb
+   stick (the bottom corners are the stick zones); expanded = near-full-screen. ---- */
+.ff-minimap.is-touch {
+  right: calc(10px + var(--safe-right));
+  top: calc(58px + var(--safe-top));
+  bottom: auto;
+  width: 104px;
+  height: 104px;
+  pointer-events: none;
+}
+.ff-minimap.is-touch.expanded {
+  left: calc(8px + var(--safe-left));
+  right: calc(8px + var(--safe-right));
+  top: calc(8px + var(--safe-top));
+  bottom: calc(8px + var(--safe-bottom));
+  width: auto;
+  height: auto;
+  pointer-events: auto;
+}
+/* transparent tap-catcher over the collapsed map → opens it (instead of placing a waypoint) */
+.ff-minimap .ff-mm-tap {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  border: 0;
+  background: transparent;
+  pointer-events: auto;
+  cursor: pointer;
+}
+/* close button on the expanded map (no ESC on mobile) */
+.ff-minimap .ff-mm-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 5;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  border: 1px solid rgba(43, 255, 140, 0.55);
+  background: rgba(6, 20, 13, 0.82);
+  color: var(--osd);
+  font-size: 18px;
+  font-weight: 700;
+  pointer-events: auto;
+  cursor: pointer;
+  text-shadow: 0 0 6px rgba(43, 255, 140, 0.5);
+}

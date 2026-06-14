@@ -8,6 +8,12 @@ import { Osd } from "./hud/Osd";
 import { TuningPanel } from "./tuning/TuningPanel";
 import { LoadingOverlay } from "./world/LoadingOverlay";
 import { useWorldStore } from "./world/useWorldStore";
+import { IS_TOUCH } from "./ui/device";
+import { VirtualSticks } from "./ui/VirtualSticks";
+import { TouchLookLayer } from "./ui/TouchLookLayer";
+import { TouchButtons } from "./ui/TouchButtons";
+import { TouchSettings } from "./ui/TouchSettings";
+import { RotateGate } from "./ui/RotateGate";
 
 const Minimap = lazy(() => import("./hud/Minimap"));
 
@@ -24,6 +30,12 @@ export default function App() {
           <Minimap />
         </Suspense>
       )}
+      {/* Touch UI — never mounts on desktop, so the keyboard+mouse path is unchanged. */}
+      {IS_TOUCH && <VirtualSticks />}
+      {IS_TOUCH && <TouchLookLayer />}
+      {IS_TOUCH && <TouchButtons />}
+      {IS_TOUCH && <TouchSettings />}
+      {IS_TOUCH && <RotateGate />}
     </>
   );
 }

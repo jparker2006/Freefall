@@ -98,6 +98,7 @@ type DroneStore = {
   showDroneBody: boolean; // debug: render the (normally invisible) quad body
   telemetry: Telemetry;
   toggleMode: () => void;
+  setMode: (m: FlightMode) => void;
   toggleHud: () => void;
   toggleTuning: () => void;
   togglePaused: () => void;
@@ -115,6 +116,7 @@ export const useDroneStore = create<DroneStore>((set) => ({
   showDroneBody: false,
   telemetry: ZERO_TELEMETRY,
   toggleMode: () => set((s) => ({ mode: s.mode === "acro" ? "angle" : "acro" })),
+  setMode: (m) => set({ mode: m }),
   toggleHud: () => set((s) => ({ hudVisible: !s.hudVisible })),
   toggleTuning: () => set((s) => ({ tuningVisible: !s.tuningVisible })),
   togglePaused: () => set((s) => ({ paused: !s.paused })),

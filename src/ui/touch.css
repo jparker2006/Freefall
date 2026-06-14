@@ -1,0 +1,346 @@
+/* Touch overlays — virtual sticks, throttle gauge (and, later, button cluster, settings
+   sheet, rotate gate). On-brand translucent green, matching the OSD. Only ever visible
+   when IS_TOUCH; desktop never mounts these components. */
+
+:root {
+  --ff-green: #2bff8c;
+  --ff-green-dim: rgba(43, 255, 140, 0.5);
+  --ff-green-faint: rgba(43, 255, 140, 0.16);
+  --ff-panel: rgba(6, 20, 13, 0.72);
+}
+
+/* ---- sticks container ---- */
+.ff-sticks {
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+  pointer-events: none; /* zones below opt back in */
+  font-family: ui-monospace, "SF Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+  transition: opacity 0.18s ease;
+}
+.ff-sticks--hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+.ff-sticks--hidden .ff-stick-zone {
+  pointer-events: none;
+}
+
+/* ---- thumb zones (generous, bottom corners, clear of the center view) ---- */
+.ff-stick-zone {
+  position: fixed;
+  bottom: 0;
+  height: 52%;
+  width: 40%;
+  pointer-events: auto;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.ff-stick-zone.left {
+  left: 0;
+  padding-left: var(--safe-left);
+}
+.ff-stick-zone.right {
+  right: 0;
+  padding-right: var(--safe-right);
+}
+
+/* ---- floating base ring (size set in JS to 2·radius; parked at rest, floats to thumb) ---- */
+.ff-stick-base {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 144px;
+  height: 144px;
+  opacity: 0.35;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+}
+.ff-stick-base.active {
+  opacity: 0.95;
+}
+.ff-stick-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1.5px solid var(--ff-green-dim);
+  background: radial-gradient(circle at center, var(--ff-green-faint) 0%, transparent 70%);
+  box-shadow: 0 0 14px rgba(43, 255, 140, 0.18);
+}
+/* cross hairs inside the ring */
+.ff-stick-ring::before,
+.ff-stick-ring::after {
+  content: "";
+  position: absolute;
+  background: var(--ff-green-dim);
+  opacity: 0.5;
+}
+.ff-stick-ring::before {
+  left: 18%;
+  right: 18%;
+  top: 50%;
+  height: 1px;
+  transform: translateY(-0.5px);
+}
+.ff-stick-ring::after {
+  top: 18%;
+  bottom: 18%;
+  left: 50%;
+  width: 1px;
+  transform: translateX(-0.5px);
+}
+.ff-stick-nub {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 42%;
+  height: 42%;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle at 38% 34%, rgba(180, 255, 218, 0.95), var(--ff-green) 70%);
+  box-shadow:
+    0 0 12px rgba(43, 255, 140, 0.7),
+    inset 0 0 6px rgba(0, 40, 20, 0.4);
+}
+.ff-stick-tag {
+  position: absolute;
+  bottom: calc(10px + var(--safe-bottom));
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: var(--ff-green-dim);
+  text-shadow: 0 0 6px rgba(43, 255, 140, 0.4);
+}
+
+/* ---- action button cluster (top-center row) ---- */
+.ff-btns {
+  position: fixed;
+  top: calc(6px + var(--safe-top));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  display: flex;
+  gap: 8px;
+  pointer-events: none; /* the row is layout-only; buttons opt in */
+  font-family: ui-monospace, "SF Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+}
+.ff-btn {
+  pointer-events: auto;
+  min-width: 46px;
+  height: 40px;
+  padding: 0 10px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--ff-green-dim);
+  border-radius: 9px;
+  background: var(--ff-panel);
+  color: var(--ff-green);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 6px rgba(43, 255, 140, 0.4);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.ff-btn:active {
+  background: rgba(43, 255, 140, 0.22);
+  color: #06140d;
+}
+.ff-btn-wide {
+  min-width: 62px;
+  font-size: 12px;
+}
+
+/* ---- settings sheet (leva replacement; slides in from the right) ---- */
+.ff-sheet-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  justify-content: flex-end;
+  pointer-events: auto;
+}
+.ff-sheet {
+  width: min(320px, 86vw);
+  height: 100%;
+  padding: calc(14px + var(--safe-top)) calc(16px + var(--safe-right)) calc(14px + var(--safe-bottom))
+    16px;
+  background: rgba(6, 20, 13, 0.94);
+  border-left: 1px solid var(--ff-green-dim);
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.5);
+  color: var(--ff-green);
+  font-family: ui-monospace, "SF Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.ff-sheet-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+.ff-set-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ff-set-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  opacity: 0.9;
+}
+.ff-set-val {
+  color: #baffdc;
+  margin-left: 6px;
+}
+.ff-set-sub {
+  font-size: 9px;
+  opacity: 0.5;
+  letter-spacing: 0.06em;
+  margin-top: 2px;
+}
+.ff-seg {
+  display: flex;
+  gap: 8px;
+}
+.ff-seg-btn {
+  flex: 1;
+  height: 40px;
+  border: 1px solid var(--ff-green-dim);
+  background: transparent;
+  color: var(--ff-green);
+  border-radius: 8px;
+  font-family: inherit;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+}
+.ff-seg-btn.on {
+  background: var(--ff-green);
+  color: #06140d;
+}
+.ff-sheet input[type="range"] {
+  width: 100%;
+  height: 30px;
+  accent-color: var(--ff-green);
+}
+.ff-sheet-foot {
+  margin-top: auto;
+  font-size: 9px;
+  opacity: 0.5;
+  letter-spacing: 0.06em;
+}
+
+/* ---- pause free-look surface (full-screen; only catches touches while paused) ---- */
+.ff-look-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 12;
+  pointer-events: none;
+  touch-action: none;
+}
+.ff-look-layer.active {
+  pointer-events: auto;
+}
+
+/* ---- landscape rotate gate (portrait only) ---- */
+.ff-rotate {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at center, #0c1116 0%, #05080b 100%);
+  color: var(--ff-green);
+  font-family: ui-monospace, "SF Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+  text-align: center;
+  pointer-events: auto;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
+}
+.ff-rotate-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px;
+}
+.ff-rotate-icon {
+  filter: drop-shadow(0 0 8px rgba(43, 255, 140, 0.5));
+  animation: ff-rot-tip 2.4s ease-in-out infinite;
+}
+@keyframes ff-rot-tip {
+  0%, 60%, 100% { transform: rotate(0deg); }
+  80% { transform: rotate(-90deg); }
+}
+.ff-rotate-title {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-shadow: 0 0 8px rgba(43, 255, 140, 0.55);
+}
+.ff-rotate-sub {
+  font-size: 12px;
+  opacity: 0.7;
+  letter-spacing: 0.08em;
+}
+.ff-rotate-btn {
+  margin-top: 8px;
+  height: 44px;
+  padding: 0 18px;
+}
+.ff-rotate-note {
+  margin-top: 4px;
+  font-size: 10px;
+  opacity: 0.45;
+  letter-spacing: 0.06em;
+  max-width: 80vw;
+}
+
+/* ---- throttle gauge (far-left edge; the left stick is a ratchet, so show the level) ---- */
+.ff-thr-gauge {
+  position: fixed;
+  left: calc(8px + var(--safe-left));
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+}
+.ff-thr-track {
+  width: 8px;
+  height: 34vh;
+  max-height: 240px;
+  border: 1px solid var(--ff-green-dim);
+  background: rgba(6, 20, 13, 0.5);
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+}
+.ff-thr-fill {
+  width: 100%;
+  height: 100%;
+  transform-origin: bottom;
+  transform: scaleY(0.45);
+  background: linear-gradient(to top, var(--ff-green), rgba(180, 255, 218, 0.9));
+  box-shadow: 0 0 8px rgba(43, 255, 140, 0.6);
+}
+.ff-thr-label {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--ff-green-dim);
+  text-shadow: 0 0 6px rgba(43, 255, 140, 0.4);
+}
