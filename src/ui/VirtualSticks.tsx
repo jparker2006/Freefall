@@ -22,6 +22,7 @@ import {
   clearTouchAxes,
   getThrottle,
 } from "../input/useInput";
+import { useTouchControls } from "../input/touchControls";
 import "./touch.css";
 
 const SMOOTH_TAU = 0.05; // s — light low-pass on yaw/pitch/roll + the throttle rate input
@@ -107,11 +108,14 @@ export function VirtualSticks(): ReactElement | null {
       const L = left.current;
       const Rt = right.current;
 
+      // per-axis sensitivity (live from the settings sheet) scales how far full thumb
+      // deflection reaches into each channel; the nub still tracks the thumb 1:1 (below).
+      const tc = useTouchControls.getState();
       // targets (0 when a zone is idle → axis self-centers)
-      const yawTarget = L.active ? L.rx / R : 0;
-      const thrTarget = L.active ? -L.ry / R : 0; // up (ry<0) = increase
-      const pitchTarget = Rt.active ? -Rt.ry / R : 0; // up = nose up
-      const rollTarget = Rt.active ? Rt.rx / R : 0;
+      const yawTarget = L.active ? (L.rx / R) * tc.yawSens : 0;
+      const thrTarget = L.active ? -L.ry / R : 0; // up (ry<0) = increase (rate; not scaled)
+      const pitchTarget = Rt.active ? (-Rt.ry / R) * tc.pitchRollSens : 0; // up = nose up
+      const rollTarget = Rt.active ? (Rt.rx / R) * tc.pitchRollSens : 0;
 
       const k = 1 - Math.exp(-dt / SMOOTH_TAU);
       const s = smooth.current;

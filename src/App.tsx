@@ -15,6 +15,7 @@ import { TouchButtons } from "./ui/TouchButtons";
 import { TouchSettings } from "./ui/TouchSettings";
 import { RotateGate } from "./ui/RotateGate";
 import { GamepadIndicator } from "./ui/GamepadIndicator";
+import { InstallPrompt } from "./ui/InstallPrompt";
 
 const Minimap = lazy(() => import("./hud/Minimap"));
 
@@ -39,6 +40,7 @@ export default function App() {
       {IS_TOUCH && <TouchButtons />}
       {IS_TOUCH && <TouchSettings />}
       {IS_TOUCH && <RotateGate />}
+      {IS_TOUCH && <InstallPrompt />}
     </>
   );
 }

@@ -5,6 +5,7 @@
 import { useDroneStore } from "../drone/droneState";
 import { useWorldStore } from "../world/useWorldStore";
 import { useTuning } from "../tuning/tuningStore";
+import { useTouchControls } from "../input/touchControls";
 import { IS_TOUCH } from "./device";
 import "./touch.css";
 
@@ -15,9 +16,12 @@ export function TouchSettings(): React.ReactElement | null {
   const errorTarget = useWorldStore((s) => s.errorTarget);
   const drawDistance = useWorldStore((s) => s.drawDistance);
   const metric = useTuning((s) => s.metric);
+  const pitchRollSens = useTouchControls((s) => s.pitchRollSens);
+  const yawSens = useTouchControls((s) => s.yawSens);
   if (!IS_TOUCH || !open) return null;
 
   const w = useWorldStore.getState;
+  const tc = useTouchControls.getState;
   const close = () => useDroneStore.getState().toggleTuning();
   const setMode = (m: "acro" | "angle") => useDroneStore.getState().setMode(m);
   const setMetric = (toMetric: boolean) => {
@@ -50,6 +54,34 @@ export function TouchSettings(): React.ReactElement | null {
               ACRO
             </button>
           </div>
+        </div>
+
+        <div className="ff-set-row">
+          <div className="ff-set-label">
+            PITCH / ROLL SENS <span className="ff-set-val">{pitchRollSens.toFixed(2)}</span>
+            <div className="ff-set-sub">lower = gentler attitude</div>
+          </div>
+          <input
+            type="range"
+            min={0.25}
+            max={1}
+            step={0.05}
+            value={pitchRollSens}
+            onChange={(e) => tc().setPitchRollSens(Number(e.target.value))}
+          />
+        </div>
+        <div className="ff-set-row">
+          <div className="ff-set-label">
+            YAW SENS <span className="ff-set-val">{yawSens.toFixed(2)}</span>
+          </div>
+          <input
+            type="range"
+            min={0.25}
+            max={1}
+            step={0.05}
+            value={yawSens}
+            onChange={(e) => tc().setYawSens(Number(e.target.value))}
+          />
         </div>
 
         {worldMode === "la" && (

@@ -32,6 +32,10 @@ minimap.
   auto-detected input source — dual analog sticks (FPV Mode 2), mapped buttons, and rumble
   on landing. Keyboard/mouse + touch stay live (last-active wins). See
   [Gamepad / controller](#gamepad--controller).
+- **Installable (PWA) (done):** add Freefall to a phone's home screen for a true-fullscreen,
+  landscape, standalone app — web manifest + service worker (app-shell cache; tiles still
+  stream live) + icons + an in-app install prompt (iOS gets Add-to-Home-Screen guidance).
+  See [Mobile / touch](#mobile--touch).
 
 ## Stack
 
@@ -117,15 +121,22 @@ UI for testing.
 - **Dual virtual sticks (FPV "Mode 2"):** left = vertical **throttle** (ratchets up from
   hover and holds where you lift) + horizontal **yaw**; right = **pitch / roll** (both
   self-center). Both float to where your thumb lands, and both thumbs work at once. Mobile
-  defaults to **Angle** (self-leveling); switch to Acro with the mode button.
+  defaults to **Angle** (self-leveling); switch to Acro with the mode button. Pitch/roll
+  is intentionally gentle out of the box and **tunable** (see the settings sheet).
 - **Button cluster** (top): pause, mode, respawn, nav target, HUD, and a **⚙ settings
-  sheet** (the leva replacement) — flight mode, tile detail, draw distance, units.
+  sheet** (the leva replacement) — flight mode, **stick sensitivity** (pitch/roll + yaw),
+  tile detail, draw distance, units.
 - **Minimap** collapses to a tap-to-open pill (top-right) and expands near-full-screen
   with a ✕ to close.
 - **Pause** freezes the drone for a free camera: **one finger** looks, **two fingers**
   dolly/truck. The HUD drops to a `PAUSED` badge for clean capture.
 - **Performance:** crisp-first — detail stays near desktop; the pixel ratio is capped (the
   biggest mobile win) and tile memory is tightened, trading some fps for sharpness.
+- **Install it (PWA):** tap **⤓ INSTALL · FULLSCREEN** (Android / Chrome) — or on iOS use
+  **Share → Add to Home Screen** — to run Freefall as a **standalone, landscape, fullscreen**
+  app from your home screen, with no browser chrome (the cleanest way to actually go
+  fullscreen on a phone). It's a normal install backed by a web manifest + a service worker
+  that caches the app shell; the Google 3D tiles still stream live over the network.
 
 ## Gamepad / controller
 
@@ -193,10 +204,11 @@ src/
   scene/     Scene (canvas, rig, driver) + Sandbox · FreeCamController (pause free-cam)
   drone/     droneState (store) · flightModes (acro/angle) · useFlightModel (the loop) · groundCollision (downward-only ground rest)
   input/     useInput (ramped axes, pointer lock, touch/gamepad seams) · controlConfig (keymap) ·
-             gamepad (Gamepad-API helpers) · GamepadController (per-frame poll) · gamepadStore
+             gamepad (Gamepad-API helpers) · GamepadController (per-frame poll) · gamepadStore · touchControls (stick sens)
   camera/    FpvCamera (parented, uptilt, wide FOV)
   hud/        Osd (retro green OSD) · osd-mobile.css (touch reflow) · StickIndicator · Minimap (MapLibre, lazy)
-  ui/        device (touch + orientation detect) · VirtualSticks · TouchLookLayer · TouchButtons · TouchSettings · RotateGate · touch.css
+  ui/        device (touch + orientation detect) · VirtualSticks · TouchLookLayer · TouchButtons · TouchSettings ·
+             RotateGate · GamepadIndicator · InstallPrompt (PWA) · touch.css
   postfx/    Effects (fisheye + vignette + chroma + speed blur, one pass)
   world/     useWorldStore · World (LA⇄sandbox) · LaTiles (Google 3D Tiles) ·
              WorldEnvironment (mood) · moods · anchor (coordinate bridge) · LoadingOverlay ·
@@ -204,5 +216,6 @@ src/
              WaypointGuide (3D guide line + beacon + chevron)
   tuning/    tuningStore · TuningPanel (leva) · levaBridge
   lib/       mathUtils  ·  constants.ts (world + DEFAULTS)
-public/      draco/ + basis/ (tile decoders) · la-neighborhoods.geojson (place names)
+public/      draco/ + basis/ (tile decoders) · la-neighborhoods.geojson (place names) ·
+             manifest.webmanifest + sw.js + icons/ (PWA: installable, app-shell cache)
 ```
