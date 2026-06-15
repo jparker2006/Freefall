@@ -16,6 +16,7 @@ import { TouchSettings } from "./ui/TouchSettings";
 import { RotateGate } from "./ui/RotateGate";
 import { GamepadIndicator } from "./ui/GamepadIndicator";
 import { InstallPrompt } from "./ui/InstallPrompt";
+import { ImmersiveFullscreen } from "./ui/ImmersiveFullscreen";
 
 const Minimap = lazy(() => import("./hud/Minimap"));
 
@@ -41,6 +42,7 @@ export default function App() {
       {IS_TOUCH && <TouchSettings />}
       {IS_TOUCH && <RotateGate />}
       {IS_TOUCH && <InstallPrompt />}
+      {IS_TOUCH && <ImmersiveFullscreen />}
     </>
   );
 }
