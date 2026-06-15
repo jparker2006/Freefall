@@ -1,50 +1,39 @@
-// Installed-PWA immersive fullscreen. Android often launches a PWA in `standalone` mode —
-// the system status/navigation bars stay visible even when the manifest asks for fullscreen —
-// which leaves a dark system bar along a screen edge (and the web viewport ends up smaller
-// than the screen). The Fullscreen API, invoked from a user gesture, hides those bars for
-// true edge-to-edge play, and the resulting resize makes the canvas refill the whole screen.
+// Immersive fullscreen on mobile. A phone won't go edge-to-edge on its own — even an
+// installed PWA can launch with the system status/navigation bars visible (the dark "bar"),
+// and a browser tab keeps its chrome. So on touch we request the Fullscreen API on the user's
+// first interaction (and re-assert it on later taps if it was dismissed), then lock landscape
+// and nudge a resize so the canvas refills the new viewport.
 //
-// We arm it on touch (the first tap goes immersive; later taps re-assert it if it was
-// dismissed). It only runs inside an INSTALLED PWA — a normal browser tab is left alone (the
-// rotate gate already offers a manual "GO FULLSCREEN" button there).
+// We listen on BOTH pointerdown (fires for the virtual sticks) and touchend (the most
+// reliably-accepted gesture for fullscreen across browsers). Gated to touch only — desktop is
+// untouched. The actual request no-ops once already fullscreen.
 import { useEffect } from "react";
 import { IS_TOUCH } from "./device";
-
-function isInstalledPWA(): boolean {
-  return (
-    window.matchMedia?.("(display-mode: standalone)").matches ||
-    window.matchMedia?.("(display-mode: fullscreen)").matches ||
-    (navigator as unknown as { standalone?: boolean }).standalone === true
-  );
-}
+import { requestImmersiveFullscreen } from "./fullscreen";
 
 type Lockable = { lock?: (orientation: string) => Promise<void> };
 
 export function ImmersiveFullscreen(): null {
   useEffect(() => {
-    if (!IS_TOUCH || !isInstalledPWA()) return;
+    if (!IS_TOUCH) return;
 
-    const enter = () => {
-      const el = document.documentElement as HTMLElement & {
-        requestFullscreen?: (opts?: FullscreenOptions) => Promise<void>;
-      };
-      if (!document.fullscreenElement && el.requestFullscreen) {
-        el.requestFullscreen({ navigationUI: "hide" }).catch(() => {});
-      }
-    };
-    // Once we're actually fullscreen, lock to landscape (this API needs fullscreen first).
+    const onGesture = () => requestImmersiveFullscreen();
     const onFsChange = () => {
       if (document.fullscreenElement) {
+        // Orientation lock needs an active fullscreen, so do it here, not in the gesture.
         (screen.orientation as unknown as Lockable)?.lock?.("landscape").catch(() => {});
       }
+      // The viewport just grew/shrank — make r3f (and any vh-based overlays) re-measure.
+      window.dispatchEvent(new Event("resize"));
     };
 
-    // Capture phase + passive: fire before the virtual sticks' own pointerdown, but never
-    // interfere with it (no preventDefault / no stopPropagation).
-    window.addEventListener("pointerdown", enter, { capture: true, passive: true });
+    // capture + passive: run before the sticks' own handlers, never interfere with them.
+    window.addEventListener("pointerdown", onGesture, { capture: true, passive: true });
+    window.addEventListener("touchend", onGesture, { capture: true, passive: true });
     document.addEventListener("fullscreenchange", onFsChange);
     return () => {
-      window.removeEventListener("pointerdown", enter, true);
+      window.removeEventListener("pointerdown", onGesture, true);
+      window.removeEventListener("touchend", onGesture, true);
       document.removeEventListener("fullscreenchange", onFsChange);
     };
   }, []);

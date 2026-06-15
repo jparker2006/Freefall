@@ -4,6 +4,7 @@
 // or by tapping the backdrop. Not input-gated otherwise — it greets every new player.
 import { useState } from "react";
 import { IS_TOUCH } from "./device";
+import { requestImmersiveFullscreen } from "./fullscreen";
 import "./onboarding.css";
 
 const SEEN_KEY = "ff-onboarded";
@@ -38,6 +39,9 @@ export function Onboarding(): React.ReactElement | null {
   if (!show) return null;
 
   const dismiss = () => {
+    // The button/backdrop tap is a reliable click gesture — the best moment to go fullscreen
+    // on a phone (where launch-time fullscreen is flaky). Do it before unmounting.
+    if (IS_TOUCH) requestImmersiveFullscreen();
     setShow(false);
     try {
       localStorage.setItem(SEEN_KEY, "1");
