@@ -208,7 +208,7 @@ src/
   camera/    FpvCamera (parented, uptilt, wide FOV)
   hud/        Osd (retro green OSD) · osd-mobile.css (touch reflow) · StickIndicator · Minimap (MapLibre, lazy)
   ui/        device (touch + orientation detect) · VirtualSticks · TouchLookLayer · TouchButtons · TouchSettings ·
-             RotateGate · GamepadIndicator · InstallPrompt (PWA) · touch.css
+             RotateGate · GamepadIndicator · InstallPrompt + ImmersiveFullscreen (PWA) · Onboarding (first-run how-to) · touch.css
   postfx/    Effects (fisheye + vignette + chroma + speed blur, one pass)
   world/     useWorldStore · World (LA⇄sandbox) · LaTiles (Google 3D Tiles) ·
              WorldEnvironment (mood) · moods · anchor (coordinate bridge) · LoadingOverlay ·

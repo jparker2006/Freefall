@@ -17,6 +17,7 @@ import { RotateGate } from "./ui/RotateGate";
 import { GamepadIndicator } from "./ui/GamepadIndicator";
 import { InstallPrompt } from "./ui/InstallPrompt";
 import { ImmersiveFullscreen } from "./ui/ImmersiveFullscreen";
+import { Onboarding } from "./ui/Onboarding";
 
 const Minimap = lazy(() => import("./hud/Minimap"));
 
@@ -43,6 +44,8 @@ export default function App() {
       {IS_TOUCH && <RotateGate />}
       {IS_TOUCH && <InstallPrompt />}
       {IS_TOUCH && <ImmersiveFullscreen />}
+      {/* First-visit how-to-fly card (desktop or touch; shown once per browser). */}
+      <Onboarding />
     </>
   );
 }
